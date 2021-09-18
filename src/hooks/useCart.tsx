@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
 import { Product } from '../types';
@@ -32,6 +32,20 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return [];
   });
 
+  const prevCartRef = useRef<Product[]>()
+
+  useEffect(() => {
+    prevCartRef.current = cart
+  })
+
+  const cartPreviousValue = prevCartRef.current ?? cart
+
+  useEffect(() => {
+    if(cartPreviousValue !== cart){
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart))  // transf. Objeto em String
+    }
+  }, [cart, cartPreviousValue])
+
   const addProduct = async (productId: number) => {
     try {
       const updatedCart = [...cart]                                   // novo array com valores de cart, de forma a manter imutabilidade
@@ -63,8 +77,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       }
 
       setCart(updatedCart)  // atualiza o estado/State do carrinho
-      localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))  // transf. Objeto em String
-
     } catch {
       toast.error('Erro na adição do produto');
     }
@@ -80,7 +92,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         updatedCart.splice(productIndex, 1)         // splice(a partir de qual pos. deve apagar, quantos items)
         setCart(updatedCart)                        // atualiza o estado/State do carrinho
 
-        localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))         // transf. Objeto em String
       } else {
         throw Error() // força um erro para cai da condição de Catch
       }
@@ -113,9 +124,8 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       // se o produto de fato existir no carrinho, atualiza a qtd no carrinho
       if (productExists) {
         productExists.amount = amount
-
         setCart(updatedCart)  // atualiza o estado/State do carrinho
-        localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))  // transf. Objeto em String
+
       }else{
         throw Error()         // força um erro para cai da condição de Catch
       }
